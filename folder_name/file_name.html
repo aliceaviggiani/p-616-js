@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Other Languages in NYC</title>
+
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  </head>
+
+  <body>
+    <div class="container">
+        <h1>Non-English native speakers in NYC</h1>
+        <h3>Scatter plot</h3>
+
+        <canvas id="scatterplot"></canvas>
+    </div>
+
+    <script>
+        Chart.defaults.font.family = 'Courier';
+
+        const canvas = document.getElementById("scatterplot");
+        const data_file = "https://raw.githubusercontent.com/aliceaviggiani/p-616-js/main/data-census-other_languages-3.csv";
+        const borough_color = {
+            // "Manhattan": "#936cd1",
+            // "Brooklyn":  "#d16aa4",
+            // "Queens":    "#ff6699",
+            // "Bronx":     "#ff9966",
+            // "Staten Island": "#ffd666"
+            "Manhattan": "#ffbe0b",
+            "Brooklyn":  "#fb5607",
+            "Queens":    "#ff006e",
+            "Bronx":     "#8338ec",
+            "Staten Island": "#3a86ff"
+        };
+
+        function matchColor(ctx) {
+            if (ctx.borough) {
+                return borough_color[ctx.borough];
+            }
+            if (ctx.raw) {
+                return borough_color[ctx.raw.borough];
+            }
+            if (ctx.tooltip?.dataPoints?.length) {
+                return borough_color[ctx.tooltip.dataPoints[0].raw.borough];
+            }
+        }
+
+
+        d3.csv(data_file).
+        then((id) => {
+            const dataPoints = id.map(
+                d => ({
+                    x: +d.pop_total,
+                    y: +d.per_other_languages,
+                    zip: d.id,
+                    borough: d.borough,
+                    pointsColor: matchColor(d)
+                    // backgroundColor: +d.pop_total >= 30000 ? "blue" : "white"
+                })
+            );
+
+            new Chart(canvas, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        data: dataPoints,
+                        pointRadius: 6,
+                        pointHoverRadius: 18,
+                        pointBorderWidth: 0,
+                        backgroundColor: dataPoints.map(d => matchColor(d)),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    parsing: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            borderColor: matchColor,
+                            // borderColor: d.borough,
+                            borderWidth: 1,
+                            // bodyColor: 'gray',
+                            displayColors: false,
+                            caretPadding: 24,
+                            padding: 12,
+                            caretSize: 0,
+                            xAlign: 'left',
+                            yAlign: 'center',
+                            callbacks: {
+                                labelTextColor: matchColor,
+                                label: (ctx) => {
+                                    const {x, y, zip, borough} = ctx.raw;
+                                    return [
+                                        `Zipcode: ${zip}`,
+                                        `${borough}`,
+                                        // `\n`,
+                                        `Total population: ${x}`,
+                                        `Non-English native speakers: ${y}%`
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                
+                    scales: {
+                        x: { 
+                            title: { 
+                                display: true, 
+                                text: "total population",
+                                // font: {family: 'Courier'},
+                                color: 'white',
+                                align: 'start',
+                                padding: 12
+                            },
+                            grid: { 
+                                drawBorder: true, 
+                                color: '#333'
+                            }
+                        },
+                        y: { 
+                            title: { 
+                                display: true, 
+                                text: "non-english native population, %",
+                                color: 'white',
+                                align: 'start',
+                                // padding: {top: 24, bottom: 12},
+                            },
+                        grid: { 
+                                drawBorder: true, 
+                                color: '#333'
+                            }
+
+                        }
+                    }
+                }
+            });
+        });
+
+    </script>
+
+  </body>
+</html>
